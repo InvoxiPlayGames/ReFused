@@ -8,6 +8,8 @@ const uploads = express();
 
 var host_url = "http://192.168.0.33:8080";
 
+var owned_dlc_list = [];
+
 // parse all incoming data on the API as json, that's what it'll be
 api.use(express.json({ strict: true }));
 
@@ -16,7 +18,13 @@ api.post('/auth/:type/', (req, res) => {
     if (req.params.type == "jwt") {
         if (req.body.platform == "stm") {
             // need to use steamworks api to validate
-            console.log(AppTicket.parseAppTicket(Buffer.from(req.body.token, "hex"), false));
+            let parsed_ticket = AppTicket.parseAppTicket(Buffer.from(req.body.token, "hex"), false);
+            owned_dlc_list = [];
+            if (parsed_ticket.dlc) {
+                parsed_ticket.dlc.forEach((d) => {
+                    owned_dlc_list.push(d.appID);
+                })
+            }
         }
         res.json({ results: {
             token: "test",
@@ -38,12 +46,7 @@ api.get('/auth/:platform/owned_dlc/', (req, res) => {
     if (req.params.platform == "steam") {
         res.json({ results: {
             // we can fetch these from the steam app ticket
-            owned_dlc: [
-                1331440, 1497570, 1559220, 1559221, 
-                1577430, 1577431, 1588961, 1598244,
-                1598247, 1638752, 1644610, 1644614,
-                1652860, 1652861, 1652862, 1652863
-            ]
+            owned_dlc: owned_dlc_list
         }});
     } else {
         // i have no idea how Epic/NX handles it, maybe an owned_dlc array with strings of the offerIDs i'm assuming?
@@ -125,6 +128,13 @@ api.get('/players/ping/', (req, res) => {
 api.get('/players/avatar/', (req, res) => {
     res.json({ results: {
         asset_upload_url: `${host_url}/uploads/avatar.bin`
+    }})
+});
+
+// profile pic asset upload
+api.get('/players/profile_pic/', (req, res) => {
+    res.json({ results: {
+        image_upload_url: `${host_url}/uploads/avatar.jpg`
     }})
 });
 
