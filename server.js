@@ -1,6 +1,12 @@
+const fs = require("fs");
 const express = require("express");
+const bodyparser = require("body-parser");
+const AppTicket = require("steam-appticket");
 const app = express();
 const api = express();
+const uploads = express();
+
+var host_url = "http://192.168.0.33:8080";
 
 // parse all incoming data on the API as json, that's what it'll be
 api.use(express.json({ strict: true }));
@@ -8,6 +14,10 @@ api.use(express.json({ strict: true }));
 // auth is in the form /api/auth/jwt/ and possibly more
 api.post('/auth/:type/', (req, res) => {
     if (req.params.type == "jwt") {
+        if (req.body.platform == "stm") {
+            // need to use steamworks api to validate
+            console.log(AppTicket.parseAppTicket(Buffer.from(req.body.token, "hex"), false));
+        }
         res.json({ results: {
             token: "test",
             prefix: "JWT",
@@ -16,7 +26,7 @@ api.post('/auth/:type/', (req, res) => {
             has_profane_name: false,
             token_duration: 120
         }});
-    } else {
+    } else { // maybe something else?
         res.status(400);
         res.end();
     }
@@ -84,7 +94,6 @@ api.get('/store/song_manifest/get/', (req, res) => {
             "headandheart","walkingonsunshine","levitating","royceplease","looppack07",
             "rumors","stay","shedrivesmecrazy","crystalbeach","imgonnabe"
         ]}});
-    res.end();
 });
 
 // main menu promotions
@@ -110,6 +119,75 @@ api.get('/main_menu/promotions/get_active/', (req, res) => {
 // ping endpoint
 api.get('/players/ping/', (req, res) => {
     res.json({ results: { status: "ok" } });
+});
+
+// avatar asset upload
+api.get('/players/avatar/', (req, res) => {
+    res.json({ results: {
+        asset_upload_url: `${host_url}/uploads/avatar.bin`
+    }})
+});
+
+// mix uploading
+api.post('/recordings/new/', (req, res) => {
+    res.json({ results: {
+        asset_upload_url: `${host_url}/uploads/mix.bin`,
+        image_upload_url: `${host_url}/uploads/mix.jpg`,
+        asset_download_url: `${host_url}/uploads/mix.bin`,
+        image_download_url: `${host_url}/uploads/mix.jpg`,
+        image_medium_download_url: `${host_url}/uploads/mix.jpg`,
+        image_small_download_url: `${host_url}/uploads/mix.jpg`,
+        recording_id: 69,
+        has_praised: false,
+        created: 0, // unix timestamp
+        view_count: 0,
+        praise_count: 0,
+        snapshot_count: 0,
+        mix_name: "A FakeFuser Mix",
+        is_remix: false,
+        remix_parent: null,
+        challenge: null,
+        is_active_challenge_submission: false,
+        campaign_mission: null,
+        venue: {
+            venue_name: "VenueA" // this metadata is sent in the upload request
+        },
+        venue_time_of_day: "night",
+        user: null // usually an object of the user
+    }})
+});
+
+// fake listing, to test if recordings really work
+api.post('/recordings/get_list/', (req, res) => {
+    res.json({ results: {
+        current_page: 1,
+        num_pages: 1,
+        recordings: [{
+            asset_upload_url: `${host_url}/uploads/mix.bin`,
+            image_upload_url: `${host_url}/uploads/mix.jpg`,
+            asset_download_url: `${host_url}/uploads/mix.bin`,
+            image_download_url: `${host_url}/uploads/mix.jpg`,
+            image_medium_download_url: `${host_url}/uploads/mix.jpg`,
+            image_small_download_url: `${host_url}/uploads/mix.jpg`,
+            recording_id: 69,
+            has_praised: false,
+            created: 0, // unix timestamp
+            view_count: 0,
+            praise_count: 0,
+            snapshot_count: 0,
+            mix_name: "A FakeFuser Mix",
+            is_remix: false,
+            remix_parent: null,
+            challenge: null,
+            is_active_challenge_submission: false,
+            campaign_mission: null,
+            venue: {
+                venue_name: "VenueA" // this metadata is sent in the upload request
+            },
+            venue_time_of_day: "night",
+            user: null // usually an object of the user
+        }]
+    }})
     res.end();
 });
 
@@ -125,14 +203,34 @@ api.get('/nop/', (req, res) => {
 });
 api.all('/main_stage/refresh_urls/', (req, res) => {
     res.json({ results: {
-        current_event_url: "http://192.168.0.33:8080/api/nop/?from=current_event_url",
-        events_url: "http://192.168.0.33:8080/api/nop/?from=events_url",
-        headliners_url: "http://192.168.0.33:8080/api/nop/?from=headliners_url",
-        latest_spectators: "http://192.168.0.33:8080/api/nop/?from=latest_spectators",
-        next_event_url: "http://192.168.0.33:8080/api/nop/?from=next_event_url",
+        current_event_url: `${host_url}/api/nop/?from=current_event_url`,
+        events_url: `${host_url}/api/nop/?from=events_url`,
+        headliners_url: `${host_url}/api/nop/?from=headliners_url`,
+        latest_spectators: `${host_url}/api/nop/?from=latest_spectators`,
+        next_event_url: `${host_url}/api/nop/?from=next_event_url`,
     }});
+});
+
+// assign an endpoint for uploading and downloading files
+// THIS IS INSECURE WE HAVE GOT TO ADD AUTHENTICATION
+uploads.use(bodyparser.raw({ type: (r) => { return true; }, limit: '10mb' }));
+uploads.get('/:filename', (req, res) => {
+    if (fs.existsSync(`files/${req.params.filename}`)) {
+        console.log("Fetching file", req.params.filename);
+        res.write(fs.readFileSync(`files/${req.params.filename}`));
+        res.end();
+    } else {
+        res.status(404);
+        res.end();
+    }
+});
+uploads.put('/:filename', (req, res) => {
+    console.log("Writing file", req.params.filename);
+    fs.writeFileSync(`files/${req.params.filename}`, req.body);
+    res.end();
 });
 
 // assign the API to the root app and listen on port 8080
 app.use("/api", api);
+app.use("/uploads", uploads);
 app.listen(8080);
