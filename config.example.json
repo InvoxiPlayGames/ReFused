@@ -1,0 +1,25 @@
+{
+    "sequelize": {
+        "dialect": "sqlite",
+        "storage": "refused.db",
+        "define": {
+            "timestamps": false
+        },
+        "logging": false
+    },
+    "auth": {
+        "steam": {
+            "validate_sig": true
+        },
+        "epic": {
+            "validate_sig": true
+        },
+        "switch": {
+            "validate_sig": true
+        }
+    },
+    "uploads_path": "uploads",
+    "static_path": "static",
+    "host_url": "[Put the URL of your publicly accessible server here]",
+    "token_key": "[Put a completely random and secure string here, a weak key could allow compromised access]"
+}

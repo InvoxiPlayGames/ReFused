@@ -1,2 +1,5 @@
 .DS_Store
-files/
+uploads/
+static/
+config.json
+*.db
