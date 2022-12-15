@@ -1,9 +1,8 @@
 const express = require("express");
 const router = express.Router();
-const jose = require("jose");
 const config = require("../config.json");
 const { Players } = require("./database");
-const { VerifyAuthHeader } = require("./helpers")
+const { VerifyAuthHeader, GenerateFilePutURL } = require("./helpers")
 
 router.use(VerifyAuthHeader);
 
@@ -18,17 +17,28 @@ router.get('/avatar/', async (req, res) => {
     // TODO: add authentication token generation
     var user = await Players.findOne({ attributes: ['avatar_filename'], where: {id: req.token.sub} })
     res.json({ results: {
-        asset_upload_url: `${config.host_url}/uploads/${user.avatar_filename}`
+        asset_upload_url: await GenerateFilePutURL(user.avatar_filename)
     }})
 });
 
 // profile pic asset upload
 router.get('/profile_pic/', async (req, res) => {
     // TODO: add authentication token generation
-    var user = await Players.findOne({ attributes: ['profile_pic_filename'], where: {id: req.token.sub} })
+    var user = await Players.findOne({ attributes: ['profile_pic_filename'], where: {id: req.token.sub} });
     res.json({ results: {
-        asset_upload_url: `${config.host_url}/uploads/${user.profile_pic_filename}`
+        asset_upload_url: await GenerateFilePutURL(user.profile_pic_filename)
     }})
+});
+
+
+router.post("/xp/", async (req, res) => {
+    // keep track of the XP the user had when they started to retroactively grant rewards
+    var user = await Players.findOne({ attributes: ['starting_xp'], where: {id: req.token.sub} });
+    if (user.startingxp == null || user.startingxp < 1) {
+        Players.update({ starting_xp: req.body.hype_profile.xp }, { where: {id: req.token.sub} });
+    }
+    // update the user's XP value
+    Players.update({ xp: req.body.hype_profile.xp }, { where: {id: req.token.sub} });
 });
 
 router.post("/get/", async (req, res) => {
@@ -53,7 +63,7 @@ router.post("/get/", async (req, res) => {
             asset_download_url: config.host_url + "/uploads/" + user.profile_pic_filename,
             asset_medium_download_url: config.host_url + "/uploads/" + user.profile_pic_filename,
             asset_small_download_url: config.host_url + "/uploads/" + user.profile_pic_filename,
-            pic_id: Date.now() // should probs change this :v
+            pic_id: user.id
         },
         platform_profile: {
             platform_enum_code: user.platform_enum,
@@ -77,7 +87,9 @@ router.post("/get/", async (req, res) => {
             type_name: "Up and Comer"
         },
         stats: null, // TODO later
-        hype_profile: null // TODO later
+        hype_profile: {
+            xp: user.xp
+        } // TODO fill in later
     }});
 });
 

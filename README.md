@@ -4,18 +4,17 @@
 
 A recreation of Harmonix's Fuser Web Services API, written in Node.js, to preserve the functionality of the game post-shutdown.
 
-**DISCLAIMER: NOT A LOT OF THINGS ARE IMPLEMENTED, AND RUNNING THIS IN ITS CURRENT STATE IS INSECURE!**
+**DISCLAIMER: NOT A LOT OF THINGS ARE IMPLEMENTED, RUNNING THIS IN ITS CURRENT STATE IS UNSTABLE!**
 
 ## Supported
 
 * Allows for Steam, Epic and Nintendo login.
     * Allows Steam users to play the DLC that they own.
-* Very basic rudimentary mix upload/download.
-    * Only one mix can be uploaded at a time, and a lot of info is static.
+* Basic mix upload/download functionality.
+* Searching for other users by username and viewing their profile and mixes.
 
 ## TODO
 
-* Properly uploading and viewing mixes between users.
 * A stub version of the Diamond Store to allow unlocking every single item.
 * Favouriting mixes.
 * Importing mixes and other data saved from the original servers.

@@ -4,7 +4,7 @@ const jose = require("jose");
 const config = require("../config.json");
 const AppTicket = require("steam-appticket");
 const { Players } = require("./database");
-const { VerifyAuthHeader } = require("./helpers");
+const { VerifyAuthHeader, GenerateRandomHex } = require("./helpers");
 
 // TODO: only download from these URLs if signing is enabled
 const SwitchJWK = jose.createRemoteJWKSet(new URL("https://e0d67c509fb203858ebcb2fe3f88c2aa.baas.nintendo.com/1.0.0/certificates"));
@@ -14,8 +14,6 @@ const EpicJWK = jose.createRemoteJWKSet(new URL("https://api.epicgames.dev/epic/
 var steam_dlc_map = {};
 // the token used to validate JWTs
 const token_key = new TextEncoder().encode(config.token_key);
-
-const generateRandomHex = size => [...Array(size)].map(() => Math.floor(Math.random() * 16).toString(16)).join('');
 
 router.post("/jwt/", async (req, res) => {
     if (req.body.platform == null || req.body.platform_user_id == null || req.body.platform_username == null || req.body.token == null) {
@@ -124,7 +122,7 @@ router.post("/jwt/", async (req, res) => {
         console.log(`Creating a new account for ${req.body.platform} user "${req.body.platform_username}" (${req.body.platform_user_id})...`);
 
         // TODO: generate a valid hype username. for now just use the platform username and some randomness
-        let hype_username = req.body.platform_username + "#" + generateRandomHex(4);
+        let hype_username = req.body.platform_username + "#" + GenerateRandomHex(4);
 
         // add the user entry to the database
         user = await Players.create({
@@ -136,8 +134,8 @@ router.post("/jwt/", async (req, res) => {
             last_seen: Date.now(),
             crossplay_enabled: true,
             elder_credit_count: 0,
-            avatar_filename: "ava_" + generateRandomHex(32) + ".bin",
-            profile_pic_filename: "pfp_" + generateRandomHex(32) + ".jpg",
+            avatar_filename: "ava_" + GenerateRandomHex(32) + ".bin",
+            profile_pic_filename: "pfp_" + GenerateRandomHex(32) + ".jpg",
             hype_username
         });
     } else {

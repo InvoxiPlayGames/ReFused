@@ -5,6 +5,16 @@ const { Players } = require("./database");
 // the token used to validate JWTs
 const token_key = new TextEncoder().encode(config.token_key);
 
+// function to generate file urls
+const GenerateFilePutURL = async (filename) => {
+    let token = await new jose.SignJWT({ filename }).setProtectedHeader({ alg: 'HS256' })
+        .setIssuer("ReFused/FileUpload")
+        .setIssuedAt()
+        .setExpirationTime('30s')
+        .sign(token_key);
+    return `${config.host_url}/uploads/${filename}?token=${token}`;
+}
+
 // middleware to verify user tokens
 const VerifyAuthHeader = async (req, res, next) => {
     // if we don't have an auth header, it's not right
@@ -30,4 +40,7 @@ const VerifyAuthHeader = async (req, res, next) => {
     next();
 }
 
-module.exports = { VerifyAuthHeader };
+// random string generator
+const GenerateRandomHex = size => [...Array(size)].map(() => Math.floor(Math.random() * 16).toString(16)).join('');
+
+module.exports = { VerifyAuthHeader, GenerateRandomHex, GenerateFilePutURL };

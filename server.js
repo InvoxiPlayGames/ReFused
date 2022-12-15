@@ -1,20 +1,17 @@
 const fs = require("fs");
 const express = require("express");
-const bodyparser = require("body-parser");
 const config = require("./config.json");
 const app = express();
 const api = express();
-const uploads = express();
 const { startDB } = require("./modules/database");
 
 // parse all incoming data on the API as json, that's what it'll be
 api.use(express.json({ strict: true }));
 
-// set the authentication api to use the auth submodule
 api.use("/auth", require("./modules/auth"));
-
-// set the player api to use the players submodule
 api.use("/players", require("./modules/players"));
+api.use("/recordings", require("./modules/recordings"));
+api.use("/search", require("./modules/search"));
 
 // store manifest endpoint
 // the game (Steam) also requires this to use DLC
@@ -23,10 +20,10 @@ api.get('/store/song_manifest/get/', (req, res) => {
         "release_id": "week43",
         "release_date": "2021-12-02",
         // TODO: include copies of the dlcmanifest.pak asset
-        ps_asset_download_url: null,
-        xbox_asset_download_url: null,
-        pc_asset_download_url: null,
-        switch_asset_download_url: null,
+        ps_asset_download_url:  `${config.host_url}/static/ps_store_asset.bin`,
+        xbox_asset_download_url:  `${config.host_url}/static/xbox_store_asset.bin`,
+        pc_asset_download_url: `${config.host_url}/static/pc_store_asset.bin`,
+        switch_asset_download_url: `${config.host_url}/static/switch_store_asset.bin`,
         version: 738126010, // the version of the DLC manifest - this is latest from official servers
         // list of valid shortnames for songs
         songs: [
@@ -80,69 +77,6 @@ api.get('/main_menu/promotions/get_active/', (req, res) => {
     }})
 });
 
-// mix uploading
-api.post('/recordings/new/', (req, res) => {
-    res.json({ results: {
-        asset_upload_url: `${config.host_url}/uploads/mix.bin`,
-        image_upload_url: `${config.host_url}/uploads/mix.jpg`,
-        asset_download_url: `${config.host_url}/uploads/mix.bin`,
-        image_download_url: `${config.host_url}/uploads/mix.jpg`,
-        image_medium_download_url: `${config.host_url}/uploads/mix.jpg`,
-        image_small_download_url: `${config.host_url}/uploads/mix.jpg`,
-        recording_id: 69,
-        has_praised: false,
-        created: 0, // unix timestamp
-        view_count: 0,
-        praise_count: 0,
-        snapshot_count: 0,
-        mix_name: "A FakeFuser Mix",
-        is_remix: false,
-        remix_parent: null,
-        challenge: null,
-        is_active_challenge_submission: false,
-        campaign_mission: null,
-        venue: {
-            venue_name: "VenueA" // this metadata is sent in the upload request
-        },
-        venue_time_of_day: "night",
-        user: null // usually an object of the user
-    }})
-});
-
-// fake listing, to test if recordings really work
-api.post('/recordings/get_list/', (req, res) => {
-    res.json({ results: {
-        current_page: 1,
-        num_pages: 1,
-        recordings: [{
-            asset_upload_url: `${config.host_url}/uploads/mix.bin`,
-            image_upload_url: `${config.host_url}/uploads/mix.jpg`,
-            asset_download_url: `${config.host_url}/uploads/mix.bin`,
-            image_download_url: `${config.host_url}/uploads/mix.jpg`,
-            image_medium_download_url: `${config.host_url}/uploads/mix.jpg`,
-            image_small_download_url: `${config.host_url}/uploads/mix.jpg`,
-            recording_id: 69,
-            has_praised: false,
-            created: 0, // unix timestamp
-            view_count: 0,
-            praise_count: 0,
-            snapshot_count: 0,
-            mix_name: "A FakeFuser Mix",
-            is_remix: false,
-            remix_parent: null,
-            challenge: null,
-            is_active_challenge_submission: false,
-            campaign_mission: null,
-            venue: {
-                venue_name: "VenueA" // this metadata is sent in the upload request
-            },
-            venue_time_of_day: "night",
-            user: null // usually an object of the user
-        }]
-    }})
-    res.end();
-});
-
 // for the telemetry endpoints, we don't care
 api.all('/bi/events/:event/', (req, res) => {
     res.end();
@@ -163,30 +97,11 @@ api.all('/main_stage/refresh_urls/', (req, res) => {
     }});
 });
 
-// assign an endpoint for uploading and downloading files
-// THIS IS INSECURE WE HAVE GOT TO ADD AUTHENTICATION
-uploads.use(bodyparser.raw({ type: (r) => { return true; }, limit: '1mb' }));
-uploads.get('/:filename', (req, res) => {
-    if (fs.existsSync(`${config.uploads_path}/${req.params.filename}`)) {
-        console.log("Fetching file", req.params.filename);
-        res.write(fs.readFileSync(`${config.uploads_path}/${req.params.filename}`));
-        res.end();
-    } else {
-        res.status(404);
-        res.end();
-    }
-});
-uploads.put('/:filename', (req, res) => {
-    console.log("Writing file", req.params.filename);
-    fs.writeFileSync(`${config.uploads_path}/${req.params.filename}`, req.body);
-    res.end();
-});
-
 // prepare the database
 startDB();
 
 // assign the API to the root app and listen on port 8080
 app.use("/api", api);
-app.use("/uploads", uploads);
 app.use("/static", express.static(config.static_path));
+app.use("/uploads", require("./modules/uploads"));
 app.listen(8080);
