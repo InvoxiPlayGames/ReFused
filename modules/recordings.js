@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 const config = require("../config.json");
 const { Players, Recordings } = require("./database");
-const { VerifyAuthHeader, GenerateRandomHex, GenerateFilePutURL } = require("./helpers")
+const { VerifyAuthHeader, GenerateRandomHex, GenerateFilePutURL, EnumToPlatformName } = require("./helpers")
 
 router.use(VerifyAuthHeader);
 
@@ -54,7 +54,9 @@ router.post("/get_list/", async (req, res) => {
     // fetch that user's mixes
     var offset = (req.body.page * req.body.pageSize) - req.body.pageSize;
     var mixes_count = await Recordings.count({ where: {player_id: req.body.user_id} });
-    var mixes_db = await Recordings.findAll({ where: {player_id: req.body.user_id}, limit: req.body.pageSize, offset });
+    var mixes_db = [];
+    if (!req.body.retrieve_praised_mixes)
+        mixes_db = await Recordings.findAll({ where: {player_id: req.body.user_id}, limit: req.body.pageSize, offset });
     var mixes = [];
     mixes_db.forEach((mix) => {
         mixes.push({
@@ -87,7 +89,7 @@ router.post("/get_list/", async (req, res) => {
                 platform_profile: {
                     platform_enum_code: user.platform_enum,
                     platform_user_id: user.platform_user_id,
-                    platform_username: user.platform_username,
+                    platform_username: `<img id="${EnumToPlatformName(user.platform_enum)}"/> ` + user.platform_username,
                     user_id: user.id
                 },
                 profile_pic: {

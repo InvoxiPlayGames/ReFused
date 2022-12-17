@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 const config = require("../config.json");
 const { Players } = require("./database");
-const { VerifyAuthHeader, GenerateFilePutURL } = require("./helpers")
+const { VerifyAuthHeader, GenerateFilePutURL, EnumToPlatformName } = require("./helpers");
 
 router.use(VerifyAuthHeader);
 
@@ -39,6 +39,7 @@ router.post("/xp/", async (req, res) => {
     }
     // update the user's XP value
     Players.update({ xp: req.body.hype_profile.xp }, { where: {id: req.token.sub} });
+    res.json({}); // does the game care about a response here?
 });
 
 router.post("/get/", async (req, res) => {
@@ -68,7 +69,7 @@ router.post("/get/", async (req, res) => {
         platform_profile: {
             platform_enum_code: user.platform_enum,
             platform_user_id: user.platform_user_id,
-            platform_username: user.platform_username,
+            platform_username: `<img id="${EnumToPlatformName(user.platform_enum)}"/> ` + user.platform_username,
             user_id: user.id
         },
         elder_credits: {

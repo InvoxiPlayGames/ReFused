@@ -43,4 +43,21 @@ const VerifyAuthHeader = async (req, res, next) => {
 // random string generator
 const GenerateRandomHex = size => [...Array(size)].map(() => Math.floor(Math.random() * 16).toString(16)).join('');
 
-module.exports = { VerifyAuthHeader, GenerateRandomHex, GenerateFilePutURL };
+const EnumToPlatformName = (enum_id) => {
+    switch(enum_id) {
+        case 1:
+            return "psn";
+        case 2:
+            return "xbl";
+        case 3:
+            return "ntd";
+        case 4:
+            return "stm";
+        case 5:
+            return "epc";
+        default:
+            return "other";
+    }
+};
+
+module.exports = { VerifyAuthHeader, GenerateRandomHex, GenerateFilePutURL, EnumToPlatformName };

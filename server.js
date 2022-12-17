@@ -66,9 +66,9 @@ api.get('/main_menu/promotions/get_active/', (req, res) => {
             extra_text: "https://github.com/InvoxiPlayGames/ReFused",
             message: "This is a placeholder announcement for the ReFused revival server project.",
             promotion_type: "elder_credit_score", // also valid: "event", "challenge", "recording", "dlc"
-            image_download_url: null,
-            image_medium_download_url: null,
-            image_small_download_url: null,
+            image_download_url: `${config.host_url}/static/announcement.jpg`,
+            image_medium_download_url: `${config.host_url}/static/announcement.jpg`,
+            image_small_download_url: `${config.host_url}/static/announcement.jpg`,
             event: null,
             recording: null,
             dlc: null,
