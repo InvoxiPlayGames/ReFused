@@ -6,6 +6,16 @@ A recreation of Harmonix's Fuser Web Services API, written in Node.js, to preser
 
 **DISCLAIMER: NOT A LOT OF THINGS ARE IMPLEMENTED, RUNNING THIS IN ITS CURRENT STATE IS UNSTABLE!**
 
+## Connecting to the test server
+
+Open `%localappdata%\Fuser\Saved\Config\WindowsNoEditor\Game.ini` in a text editor, and add the following lines:
+```ini
+[/Script/Hype.BackendServerMgrSettings]
+EnvironmentSettings=((Live, (ClientURL="https://refusedapi.ipg.pw/api/")))
+```
+
+This server is in a testing state and is not guaranteed to be up 24/7 nor guaranteed to be stable. If you're running your own instance, replace the ClientURL with the publicly accessible URL of the server (as well as in `config.json` on your server)
+
 ## Supported
 
 * Allows for Steam, Epic and Nintendo login.
